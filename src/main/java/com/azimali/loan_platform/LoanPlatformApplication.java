@@ -1,0 +1,13 @@
+package com.azimali.loan_platform;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class LoanPlatformApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(LoanPlatformApplication.class, args);
+	}
+
+}
