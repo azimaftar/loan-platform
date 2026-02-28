@@ -1,4 +1,4 @@
-package com.azimali.loan_platform;
+package com.azimali.loanplatform;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package com.azimali.loan_platform;
+package com.azimali.loanplatform;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
