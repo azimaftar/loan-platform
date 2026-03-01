@@ -19,6 +19,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+    persistAuthorization: true
+    disable-swagger-default-url: true
+  default-security-schemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
 server:
   port: 8080
