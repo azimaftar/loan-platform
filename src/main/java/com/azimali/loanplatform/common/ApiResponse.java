@@ -1,16 +1,20 @@
 package com.azimali.loanplatform.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
+@Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
+    // Getters
     private boolean success;
     private String message;
     private T data;
     private Object errors;
-    private LocalDateTime timestamp;
+    private final LocalDateTime timestamp;
 
     private ApiResponse() {
         this.timestamp = LocalDateTime.now();
@@ -46,10 +50,4 @@ public class ApiResponse<T> {
         return response;
     }
 
-    // Getters
-    public boolean isSuccess() { return success; }
-    public String getMessage() { return message; }
-    public T getData() { return data; }
-    public Object getErrors() { return errors; }
-    public LocalDateTime getTimestamp() { return timestamp; }
 }
