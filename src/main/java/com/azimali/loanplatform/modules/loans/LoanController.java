@@ -2,7 +2,9 @@ package com.azimali.loanplatform.modules.loans;
 
 import com.azimali.loanplatform.common.ApiResponse;
 import com.azimali.loanplatform.modules.users.User;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/loans")
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Loans", description = "Loan application lifecycle management")
 public class LoanController {
 
     private final LoanService loanService;
@@ -26,8 +29,8 @@ public class LoanController {
         this.loanService = loanService;
     }
 
-    // POST /api/loans — any authenticated user
     @PostMapping
+    @Operation(summary = "Create loan application", description = "Creates a new loan application with PENDING status")
     public ResponseEntity<ApiResponse<LoanDTO>> createLoan(
             @Valid @RequestBody CreateLoanRequest request,
             @AuthenticationPrincipal User currentUser) {
@@ -35,8 +38,8 @@ public class LoanController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Loan application created"));
     }
 
-    // GET /api/loans — paginated, role-aware
     @GetMapping
+    @Operation(summary = "Get all loans", description = "Users see their own loans. Loan officers and admins see all loans")
     public ResponseEntity<ApiResponse<Page<LoanDTO>>> getAllLoans(
             @AuthenticationPrincipal User currentUser,
             @RequestParam(defaultValue = "0") int page,
@@ -46,8 +49,8 @@ public class LoanController {
         return ResponseEntity.ok(ApiResponse.success(loans));
     }
 
-    // GET /api/loans/{id}
     @GetMapping("/{id}")
+    @Operation(summary = "Get loan by ID", description = "Users can only view their own loans")
     public ResponseEntity<ApiResponse<LoanDTO>> getLoanById(
             @PathVariable UUID id,
             @AuthenticationPrincipal User currentUser) {
@@ -55,8 +58,8 @@ public class LoanController {
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
-    // PUT /api/loans/{id} — only if PENDING
     @PutMapping("/{id}")
+    @Operation(summary = "Update loan", description = "Only allowed when loan status is PENDING")
     public ResponseEntity<ApiResponse<LoanDTO>> updateLoan(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateLoanRequest request,
@@ -65,8 +68,8 @@ public class LoanController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Loan updated successfully"));
     }
 
-    // POST /api/loans/{id}/submit — user submits for review
     @PostMapping("/{id}/submit")
+    @Operation(summary = "Submit loan for review", description = "Triggers automatic risk scoring and decision engine")
     public ResponseEntity<ApiResponse<LoanDTO>> submitLoan(
             @PathVariable UUID id,
             @AuthenticationPrincipal User currentUser) {
@@ -74,19 +77,32 @@ public class LoanController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Loan submitted for review"));
     }
 
-    // POST /api/loans/{id}/approve — LOAN_OFFICER or ADMIN only
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<LoanDTO>> approveLoan(@PathVariable UUID id) {
-        LoanDTO dto = loanService.approveLoan(id);
+    @Operation(summary = "Manually approve loan", description = "Loan officer or admin only — manually approves a loan in UNDER_REVIEW")
+    public ResponseEntity<ApiResponse<LoanDTO>> approveLoan(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User currentUser) {
+        LoanDTO dto = loanService.approveLoan(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success(dto, "Loan approved"));
     }
 
-    // POST /api/loans/{id}/reject — LOAN_OFFICER or ADMIN only
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<LoanDTO>> rejectLoan(@PathVariable UUID id) {
-        LoanDTO dto = loanService.rejectLoan(id);
+    @Operation(summary = "Manually reject loan", description = "Loan officer or admin only — manually rejects a loan in UNDER_REVIEW")
+    public ResponseEntity<ApiResponse<LoanDTO>> rejectLoan(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User currentUser) {
+        LoanDTO dto = loanService.rejectLoan(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success(dto, "Loan rejected"));
+    }
+
+    @PostMapping("/{id}/pay")
+    @Operation(summary = "Mark loan as paid", description = "Marks an APPROVED loan as PAID — completes the loan lifecycle")
+    public ResponseEntity<ApiResponse<LoanDTO>> markAsPaid(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User currentUser) {
+        LoanDTO dto = loanService.markAsPaid(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(dto, "Loan marked as paid"));
     }
 }

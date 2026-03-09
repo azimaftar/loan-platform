@@ -37,3 +37,7 @@ app:
   risk:
     approve-threshold: 0.45
     reject-threshold: 0.65
+
+#
+#    "email": "azim@example.com",
+#               "password": "password123"

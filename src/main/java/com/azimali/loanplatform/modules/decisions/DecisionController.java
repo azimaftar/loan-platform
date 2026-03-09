@@ -1,7 +1,9 @@
 package com.azimali.loanplatform.modules.decisions;
 
 import com.azimali.loanplatform.common.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +13,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/decisions")
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Decisions", description = "Automated decisions made by the risk engine")
 public class DecisionController {
 
     private final DecisionService decisionService;
@@ -20,12 +23,12 @@ public class DecisionController {
     }
 
     @GetMapping("/{loanId}")
+    @Operation(summary = "Get decision", description = "Returns the automated decision and reason for a loan")
     public ResponseEntity<ApiResponse<DecisionDTO>> getDecision(@PathVariable UUID loanId) {
         Decision decision = decisionService.getByLoanId(loanId);
         return ResponseEntity.ok(ApiResponse.success(new DecisionDTO(decision)));
     }
 
-    // Simple DTO to avoid lazy loading issues
     public record DecisionDTO(
             UUID id,
             UUID loanId,

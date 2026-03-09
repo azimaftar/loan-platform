@@ -3,6 +3,7 @@ package com.azimali.loanplatform.modules.loans;
 import com.azimali.loanplatform.common.exception.BadRequestException;
 import com.azimali.loanplatform.common.exception.ResourceNotFoundException;
 import com.azimali.loanplatform.common.exception.UnauthorizedException;
+import com.azimali.loanplatform.modules.audit.AuditService;
 import com.azimali.loanplatform.modules.decisions.DecisionService;
 import com.azimali.loanplatform.modules.risk.RiskScore;
 import com.azimali.loanplatform.modules.risk.RiskService;
@@ -20,13 +21,16 @@ public class LoanService {
     private final LoanRepository loanRepository;
     private final RiskService riskService;
     private final DecisionService decisionService;
+    private final AuditService auditService;
 
     public LoanService(LoanRepository loanRepository,
                        @Lazy RiskService riskService,
-                       @Lazy DecisionService decisionService) {
+                       @Lazy DecisionService decisionService,
+                       AuditService auditService) {
         this.loanRepository = loanRepository;
         this.riskService = riskService;
         this.decisionService = decisionService;
+        this.auditService = auditService;
     }
 
     public LoanDTO createLoan(CreateLoanRequest request, User currentUser) {
@@ -35,6 +39,11 @@ public class LoanService {
         loan.setAmount(request.getAmount());
         loan.setPurpose(request.getPurpose());
         loanRepository.save(loan);
+
+        auditService.log(currentUser, "LOAN_CREATED", "LOAN",
+                loan.getId().toString(),
+                "Loan created for amount: " + loan.getAmount());
+
         return new LoanDTO(loan);
     }
 
@@ -66,10 +75,14 @@ public class LoanService {
         if (request.getAmount() != null) loan.setAmount(request.getAmount());
         if (request.getPurpose() != null) loan.setPurpose(request.getPurpose());
         loanRepository.save(loan);
+
+        auditService.log(currentUser, "LOAN_UPDATED", "LOAN",
+                loan.getId().toString(),
+                "Loan updated");
+
         return new LoanDTO(loan);
     }
 
-    // Updated — now triggers risk scoring and decision engine
     public LoanDTO submitLoan(UUID id, User currentUser) {
         Loan loan = findLoanOrThrow(id);
 
@@ -79,34 +92,62 @@ public class LoanService {
 
         transitionStatus(loan, LoanStatus.UNDER_REVIEW);
         loanRepository.save(loan);
-        System.out.println("DEBUG: Loan saved as UNDER_REVIEW");
 
-        // Trigger risk scoring
-        System.out.println("DEBUG: About to compute risk score");
+        auditService.log(currentUser, "LOAN_SUBMITTED", "LOAN",
+                loan.getId().toString(),
+                "Loan submitted for review");
+
         RiskScore riskScore = riskService.computeAndSave(loan);
-        System.out.println("DEBUG: Risk score computed: " + riskScore.getProbability());
-
-        // Trigger decision engine
-        System.out.println("DEBUG: About to make decision");
         decisionService.decide(loan, riskScore);
-        System.out.println("DEBUG: Decision made");
 
-        // Reload loan to get updated status after decision
         loan = findLoanOrThrow(id);
+
+        auditService.log(currentUser, "LOAN_DECISION_MADE", "LOAN",
+                loan.getId().toString(),
+                "Loan decision: " + loan.getStatus());
+
         return new LoanDTO(loan);
     }
 
-    public LoanDTO approveLoan(UUID id) {
+    public LoanDTO approveLoan(UUID id, User currentUser) {
         Loan loan = findLoanOrThrow(id);
         transitionStatus(loan, LoanStatus.APPROVED);
         loanRepository.save(loan);
+
+        auditService.log(currentUser, "LOAN_MANUALLY_APPROVED", "LOAN",
+                loan.getId().toString(),
+                "Loan manually approved by: " + currentUser.getUsername());
+
         return new LoanDTO(loan);
     }
 
-    public LoanDTO rejectLoan(UUID id) {
+    public LoanDTO rejectLoan(UUID id, User currentUser) {
         Loan loan = findLoanOrThrow(id);
         transitionStatus(loan, LoanStatus.REJECTED);
         loanRepository.save(loan);
+
+        auditService.log(currentUser, "LOAN_MANUALLY_REJECTED", "LOAN",
+                loan.getId().toString(),
+                "Loan manually rejected by: " + currentUser.getUsername());
+
+        return new LoanDTO(loan);
+    }
+
+    // New — mark approved loan as paid
+    public LoanDTO markAsPaid(UUID id, User currentUser) {
+        Loan loan = findLoanOrThrow(id);
+
+        if (!loan.getUser().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You do not have access to this loan");
+        }
+
+        transitionStatus(loan, LoanStatus.PAID);
+        loanRepository.save(loan);
+
+        auditService.log(currentUser, "LOAN_PAID", "LOAN",
+                loan.getId().toString(),
+                "Loan marked as paid by: " + currentUser.getUsername());
+
         return new LoanDTO(loan);
     }
 
