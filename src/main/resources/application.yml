@@ -6,7 +6,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -34,3 +34,6 @@ app:
   jwt:
     secret: 3f8e2d1a9c7b4f6e0d5a2c8b1e4f7a3d9c6b2e5f8a1d4c7b0e3f6a9d2c5b8e1f
     expiration: 86400000
+  risk:
+    approve-threshold: 0.45
+    reject-threshold: 0.65
