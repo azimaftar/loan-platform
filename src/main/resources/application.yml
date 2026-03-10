@@ -1,10 +1,9 @@
 
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/loanplatform}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/loanplatform}
     username: ${PGUSER:loanuser}
     password: ${PGPASSWORD:loanpass}
-    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
