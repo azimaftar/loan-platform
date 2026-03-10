@@ -2,8 +2,8 @@
 spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/loanplatform}
-    username: ${DATABASE_USERNAME:loanuser}
-    password: ${DATABASE_PASSWORD:loanpass}
+    username: ${PGUSER:loanuser}
+    password: ${PGPASSWORD:loanpass}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
