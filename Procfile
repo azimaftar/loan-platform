@@ -1,0 +1,1 @@
+web: java -jar target/loan-platform-0.0.1-SNAPSHOT.jar
